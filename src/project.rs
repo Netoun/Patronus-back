@@ -64,7 +64,8 @@ pub struct Project {
   pub description: String,
   pub owner_id: Uuid,
   pub created_at: DateTime<Local>,
-  pub count: i32,
+  pub count: i64,
+  pub image_url: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -72,14 +73,20 @@ pub struct newProject {
   pub name: String,
   pub description: String,
   pub owner_id: Uuid,
+  pub image_url: String,
 }
 
 impl Project {
   pub fn create(project: newProject, connection: &Connection) -> newProject {
     connection
       .execute(
-        r#"INSERT INTO "PROJECT" (name, description, owner_id) VALUES ($1, $2, $3)"#,
-        &[&project.name, &project.description, &project.owner_id],
+        r#"INSERT INTO "PROJECT" (name, description, owner_id, image_url) VALUES ($1, $2, $3, $4)"#,
+        &[
+          &project.name,
+          &project.description,
+          &project.owner_id,
+          &project.image_url,
+        ],
       )
       .unwrap();
     project
@@ -87,7 +94,10 @@ impl Project {
 
   pub fn read(connection: &Connection) -> Vec<Project> {
     connection
-      .query(r#"SELECT * FROM "PROJECT""#, &[])
+      .query(r#"SELECT p.project_id, p.name, p.description, p.owner_id, p.created_at, p.image_url, COUNT(s.support_id) as count 
+      from "PROJECT" as p 
+      LEFT JOIN "SUPPORT" as s on s.project_id = p.project_id
+      group by p.project_id"#, &[])
       .unwrap()
       .into_iter()
       .map(|row| Project {
@@ -96,6 +106,8 @@ impl Project {
         description: row.get(2),
         owner_id: row.get(3),
         created_at: row.get(4),
+        image_url: row.get(5),
+        count: row.get(6)
       })
       .collect::<Vec<_>>()
   }
@@ -105,7 +117,10 @@ impl Project {
     connection: &Connection,
   ) -> Result<Project, AuthenticationError> {
     let Project = connection
-      .query(r#"SELECT p.project_id, p.name, p.description, p.owner_id, p.created_at COUNT(s.support_id) from "PROJECT" as p WHERE uuid=$1"#, &[&uuid])
+      .query(r#"SELECT p.project_id, p.name, p.description, p.owner_id, p.created_at, p.image_url, COUNT(s.support_id) as full_count 
+        from "PROJECT" as p 
+        LEFT JOIN "SUPPORT" as s on s.project_id = p.project_id
+        group by p.project_id WHERE uuid=$1"#, &[&uuid])
       .map_err(AuthenticationError::DatabaseError)?;
 
     if !Project.is_empty() && Project.len() == 1 {
@@ -116,6 +131,8 @@ impl Project {
         description: row.get(2),
         owner_id: row.get(3),
         created_at: row.get(4),
+        image_url: row.get(5),
+        count: row.get(6),
       };
       Ok(Project_results)
     } else {

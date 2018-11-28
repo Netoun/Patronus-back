@@ -114,6 +114,7 @@ fn create_project(project: Json<newProject>, connection: db::DbConn) -> Json<new
     name: project.name.to_owned(),
     description: project.description.to_owned(),
     owner_id: project.owner_id.to_owned(),
+    image_url: project.image_url.to_owned(),
   };
   Json(Project::create(insert, &connection))
 }
@@ -197,7 +198,7 @@ fn main() {
     .attach(options())
     .mount("/project", routes![create_project, project_info])
     .mount("/projects", routes![read_project])
-    .mount("/vote", routes![voter])
+    .mount("/voter", routes![voter])
     .mount("/support", routes![support_user])
     .mount("/user", routes![create, profile, profile_error])
     .mount("/users", routes![read, read_count])

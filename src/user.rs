@@ -26,7 +26,7 @@ pub struct newUser {
   pub full_name: String,
   pub email: String,
   pub password: String,
-  pub role: i32,
+  pub role: i16,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -36,7 +36,7 @@ pub struct User {
   pub email: String,
   pub created_at: DateTime<Local>,
   pub password: String,
-  pub role: i32,
+  pub role: i16,
 }
 
 #[derive(Serialize, Deserialize)]
