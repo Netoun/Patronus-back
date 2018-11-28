@@ -109,7 +109,7 @@ fn login(user: Json<UserWithPassword>, connection: db::DbConn) -> Result<JsonVal
 // ----------------
 
 #[post("/", data = "<project>", format = "application/json")]
-fn create_project(project: Json<Project>, connection: db::DbConn) -> Json<newProject> {
+fn create_project(project: Json<newProject>, connection: db::DbConn) -> Json<newProject> {
   let insert = newProject {
     name: project.name.to_owned(),
     description: project.description.to_owned(),
@@ -143,6 +143,13 @@ fn voter(vote: Json<newSupport>, connection: db::DbConn) -> Json<newSupport> {
   Json(Support::create(insert, &connection))
 }
 
+#[get("/")]
+fn support_user(key: ApiToken, connection: db::DbConn) -> Result<JsonValue, Status> {
+  Support::get_support_user(key.0, &connection)
+    .map(|support| json!(support))
+    .map_err(|error| convert_auth_error_project(error))
+}
+
 // ----------------
 // --CODE ROCKET--
 // ----------------
@@ -154,7 +161,7 @@ pub fn options() -> rocket_cors::Cors {
       .into_iter()
       .map(From::from)
       .collect(),
-    allowed_headers: AllowedHeaders::some(&["Authorization", "Accept", "Content-Type"]),
+    allowed_headers: AllowedHeaders::all(),
     allow_credentials: true,
     ..Default::default()
   }
@@ -191,6 +198,7 @@ fn main() {
     .mount("/project", routes![create_project, project_info])
     .mount("/projects", routes![read_project])
     .mount("/vote", routes![voter])
+    .mount("/support", routes![support_user])
     .mount("/user", routes![create, profile, profile_error])
     .mount("/users", routes![read, read_count])
     .mount("/login", routes![login])

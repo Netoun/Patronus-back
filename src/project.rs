@@ -14,7 +14,7 @@ pub struct Support {
   pub support_id: Uuid,
   pub user_id: Uuid,
   pub project_id: Uuid,
-  pub created_at: NaiveDateTime,
+  pub created_at: DateTime<Local>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -27,11 +27,33 @@ impl Support {
   pub fn create(support: newSupport, connection: &Connection) -> newSupport {
     connection
       .execute(
-        "INSERT INTO Support(user_id, project_id) VALUES ($1, $2, $3)",
+        r#"INSERT INTO "SUPPORT"(user_id, project_id) VALUES ($1, $2)"#,
         &[&support.user_id, &support.project_id],
       )
       .unwrap();
     support
+  }
+
+  pub fn get_support_user(
+    uuid: String,
+    connection: &Connection,
+  ) -> Result<Support, AuthenticationError> {
+    let qrystr = format!(r#"SELECT * from "SUPPORT" WHERE user_id = '{}'"#, uuid);
+    let support = connection
+      .query(&qrystr, &[])
+      .map_err(AuthenticationError::DatabaseError)?;;
+    if !support.is_empty() && support.len() == 1 {
+      let row = support.get(0);
+      let support_results = Support {
+        support_id: row.get(0),
+        user_id: row.get(1),
+        project_id: row.get(2),
+        created_at: row.get(3),
+      };
+      Ok(support_results)
+    } else {
+      Err(AuthenticationError::IncorrectUuid)
+    }
   }
 }
 
@@ -41,7 +63,8 @@ pub struct Project {
   pub name: String,
   pub description: String,
   pub owner_id: Uuid,
-  pub created_at: NaiveDateTime,
+  pub created_at: DateTime<Local>,
+  pub count: i32,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -55,7 +78,7 @@ impl Project {
   pub fn create(project: newProject, connection: &Connection) -> newProject {
     connection
       .execute(
-        "INSERT INTO project (name, description, owner_id) VALUES ($1, $2, $3, $4, $5, $6)",
+        r#"INSERT INTO "PROJECT" (name, description, owner_id) VALUES ($1, $2, $3)"#,
         &[&project.name, &project.description, &project.owner_id],
       )
       .unwrap();
@@ -64,7 +87,7 @@ impl Project {
 
   pub fn read(connection: &Connection) -> Vec<Project> {
     connection
-      .query("SELECT * FROM profile", &[])
+      .query(r#"SELECT * FROM "PROJECT""#, &[])
       .unwrap()
       .into_iter()
       .map(|row| Project {
@@ -82,7 +105,7 @@ impl Project {
     connection: &Connection,
   ) -> Result<Project, AuthenticationError> {
     let Project = connection
-      .query("SELECT * from profile WHERE uuid=$1", &[&uuid])
+      .query(r#"SELECT p.project_id, p.name, p.description, p.owner_id, p.created_at COUNT(s.support_id) from "PROJECT" as p WHERE uuid=$1"#, &[&uuid])
       .map_err(AuthenticationError::DatabaseError)?;
 
     if !Project.is_empty() && Project.len() == 1 {
