@@ -34,6 +34,16 @@ impl Support {
     support
   }
 
+  pub fn update(support: Support, connection: &Connection) -> Support {
+    connection
+      .execute(
+        r#"UPDATE "SUPPORT" SET project_id = $1 WHERE support_id = $2"#,
+        &[&support.project_id, &support.support_id],
+      )
+      .unwrap();
+    support
+  }
+
   pub fn get_support_user(
     uuid: String,
     connection: &Connection,

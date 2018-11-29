@@ -15,7 +15,6 @@ extern crate crypto;
 extern crate postgres;
 extern crate r2d2;
 extern crate r2d2_postgres;
-
 extern crate uuid;
 
 use bcrypt::hash;
@@ -155,6 +154,17 @@ fn support_user(key: ApiToken, connection: db::DbConn) -> Result<JsonValue, Stat
     .map_err(|error| convert_auth_error_project(error))
 }
 
+#[put("/", data = "<support>", format = "application/json")]
+fn update_vote(support: Json<Support>, connection: db::DbConn) -> Json<Support> {
+  let insert = Support {
+    support_id: support.support_id.to_owned(),
+    user_id: support.user_id.to_owned(),
+    project_id: support.project_id.to_owned(),
+    created_at: support.created_at.to_owned(),
+  };
+  Json(Support::update(insert, &connection))
+}
+
 // ----------------
 // --CODE SUB--
 // ----------------
@@ -182,7 +192,7 @@ fn total_sub(connection: db::DbConn) -> Result<JsonValue, Status> {
 pub fn options() -> rocket_cors::Cors {
   rocket_cors::Cors {
     allowed_origins: AllowedOrigins::all(),
-    allowed_methods: vec![Method::Post, Method::Get]
+    allowed_methods: vec![Method::Post, Method::Get, Method::Put]
       .into_iter()
       .map(From::from)
       .collect(),
@@ -222,7 +232,7 @@ fn main() {
     .attach(options())
     .mount("/project", routes![create_project, project_info])
     .mount("/projects", routes![read_project])
-    .mount("/voter", routes![voter])
+    .mount("/voter", routes![voter, update_vote])
     .mount("/support", routes![support_user])
     .mount("/user", routes![create, profile, profile_error, new_sub])
     .mount("/users", routes![read, read_count, total_sub])
