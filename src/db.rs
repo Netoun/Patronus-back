@@ -8,14 +8,20 @@ use rocket::{Outcome, Request, State};
 use postgres;
 use postgres::params::{ConnectParams, Host};
 use postgres::Connection;
-
+use std::env;
 use std::ops::Deref;
 
 pub type Pool = r2d2::Pool<PostgresConnectionManager>;
-static DATABASE_URL: &str = "postgres://postgres:boston@localhost/postgres";
 
 pub fn connect() -> Pool {
-  let manager = PostgresConnectionManager::new(DATABASE_URL, TlsMode::None).unwrap();
+  let url = format!(
+    "postgres://{}:{}@{}/{}",
+    env::var("POSTGRES_USER").unwrap(),
+    env::var("POSTGRES_PASSWORD").unwrap(),
+    env::var("POSTGRES_HOST").unwrap(),
+    env::var("POSTGRES_DB").unwrap()
+  );
+  let manager = PostgresConnectionManager::new(url, TlsMode::None).unwrap();
   Pool::new(manager).expect("Failed to create pool")
 }
 

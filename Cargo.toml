@@ -1,6 +1,6 @@
 [package]
-name = "crud-rust-api"
-version = "0.1.0"
+name = "Patronus-back"
+version = "1.0.0"
 authors = ["Netoun <coulonnier.nicolas.44@gmail.com>"]
 
 [dependencies]

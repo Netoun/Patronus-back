@@ -2,6 +2,7 @@ use bcrypt::*;
 use chrono::prelude::*;
 use postgres::rows::Row;
 use postgres::Connection;
+
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -55,7 +56,9 @@ impl Sub {
     println!("{:?}", sumSub);
     if !sumSub.is_empty() && sumSub.len() == 1 {
       let row = sumSub.get(0);
+      println!("{:?}", row);
       let sub_results = row.get(0);
+      println!("{:?}", sub_results);
       Ok(sub_results)
     } else {
       Err(AuthenticationError::IncorrectUuid)
