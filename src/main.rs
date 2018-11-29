@@ -15,7 +15,9 @@ extern crate crypto;
 extern crate postgres;
 extern crate r2d2;
 extern crate r2d2_postgres;
+
 extern crate uuid;
+
 use bcrypt::hash;
 use rocket::http::Method;
 use rocket::http::Status;

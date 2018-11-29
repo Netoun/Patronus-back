@@ -2,7 +2,6 @@ use bcrypt::*;
 use chrono::prelude::*;
 use postgres::rows::Row;
 use postgres::Connection;
-
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -20,6 +19,11 @@ impl From<BcryptError> for AuthenticationError {
   fn from(e: BcryptError) -> Self {
     AuthenticationError::BcryptError(e)
   }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TotalValuesSub {
+  pub values: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,7 +51,7 @@ impl Sub {
     sub
   }
 
-  pub fn get_sum(connection: &Connection) -> Result<f64, AuthenticationError> {
+  pub fn get_sum(connection: &Connection) -> Result<TotalValuesSub, AuthenticationError> {
     println!("ezez");
     let qrystr = format!(r#"SELECT SUM(value) from "SUBSCRIPTION""#);
     let sumSub = connection
@@ -56,9 +60,7 @@ impl Sub {
     println!("{:?}", sumSub);
     if !sumSub.is_empty() && sumSub.len() == 1 {
       let row = sumSub.get(0);
-      println!("{:?}", row);
-      let sub_results = row.get(0);
-      println!("{:?}", sub_results);
+      let sub_results = TotalValuesSub { values: row.get(0) };
       Ok(sub_results)
     } else {
       Err(AuthenticationError::IncorrectUuid)

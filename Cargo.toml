@@ -16,7 +16,7 @@ jwt = "*"
 rust-crypto = "0.2"
 rustc-serialize = "0.3"
 r2d2 = "0.8"
-postgres = { version = "0.15", features = ["with-uuid", "with-chrono"] }
+postgres = { version = "0.15.2", features = ["with-uuid", "with-chrono"] }
 r2d2_postgres="0.14"
 uuid = {version ="0.5",features = ["serde", "v4"]}
 chrono = { version = "0.4", features = ["serde"] }
