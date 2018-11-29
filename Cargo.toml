@@ -1,5 +1,5 @@
 [package]
-name = "Patronus-back"
+name = "patronus-back"
 version = "1.0.0"
 authors = ["Netoun <coulonnier.nicolas.44@gmail.com>"]
 
