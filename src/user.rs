@@ -22,6 +22,69 @@ impl From<BcryptError> for AuthenticationError {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct newSub {
+  pub user_id: Uuid,
+  pub values: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Sub {
+  pub subscription_id: Uuid,
+  pub user_id: Uuid,
+  pub values: f64,
+  pub created_at: DateTime<Local>,
+}
+
+impl Sub {
+  pub fn create(sub: newSub, connection: &Connection) -> newSub {
+    connection
+      .execute(
+        r#"INSERT INTO "SUBSCRIPTION" (full_name, values) VALUES ($1, $2)"#,
+        &[&sub.user_id, &sub.values],
+      )
+      .unwrap();
+    sub
+  }
+
+  pub fn get_sum(connection: &Connection) -> Result<f64, AuthenticationError> {
+    println!("ezez");
+    let qrystr = format!(r#"SELECT SUM(value) from "SUBSCRIPTION""#);
+    let sumSub = connection
+      .query(&qrystr, &[])
+      .map_err(AuthenticationError::DatabaseError)?;;
+    println!("{:?}", sumSub);
+    if !sumSub.is_empty() && sumSub.len() == 1 {
+      let row = sumSub.get(0);
+      let sub_results = row.get(0);
+      Ok(sub_results)
+    } else {
+      Err(AuthenticationError::IncorrectUuid)
+    }
+  }
+
+  pub fn get_sub(uuid: String, connection: &Connection) -> Result<Sub, AuthenticationError> {
+    println!("{:?}", uuid);
+    let qrystr = format!(r#"SELECT * from "SUBSCRIPTION" WHERE user_id = '{}'"#, uuid);
+    let user = connection
+      .query(&qrystr, &[])
+      .map_err(AuthenticationError::DatabaseError)?;;
+    println!("{:?}", user);
+    if !user.is_empty() && user.len() == 1 {
+      let row = user.get(0);
+      let sub_results = Sub {
+        subscription_id: row.get(0),
+        user_id: row.get(1),
+        values: row.get(2),
+        created_at: row.get(3),
+      };
+      Ok(sub_results)
+    } else {
+      Err(AuthenticationError::IncorrectUuid)
+    }
+  }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct newUser {
   pub full_name: String,
   pub email: String,

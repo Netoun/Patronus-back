@@ -35,7 +35,9 @@ use project::Project;
 use project::Support;
 use token::AdminToken;
 use token::ApiToken;
+use user::newSub;
 use user::newUser;
+use user::Sub;
 use user::User;
 use user::UserWithPassword;
 use uuid::Uuid;
@@ -152,6 +154,26 @@ fn support_user(key: ApiToken, connection: db::DbConn) -> Result<JsonValue, Stat
 }
 
 // ----------------
+// --CODE SUB--
+// ----------------
+
+#[post("/sub", data = "<sub>", format = "application/json")]
+fn new_sub(sub: Json<newSub>, connection: db::DbConn) -> Json<newSub> {
+  let insert = newSub {
+    user_id: sub.user_id.to_owned(),
+    values: sub.values.to_owned(),
+  };
+  Json(Sub::create(insert, &connection))
+}
+
+#[get("/totalsubs")]
+fn total_sub(connection: db::DbConn) -> Result<JsonValue, Status> {
+  Sub::get_sum(&connection)
+    .map(|sub| json!(sub))
+    .map_err(|error| convert_auth_error(error))
+}
+
+// ----------------
 // --CODE ROCKET--
 // ----------------
 
@@ -184,7 +206,7 @@ pub fn convert_auth_error_project(err: project::AuthenticationError) -> Status {
   use project::AuthenticationError::*;
 
   match err {
-    IncorrectUuid => Status::new(404, "Not found"),
+    IncorrectUuid => Status::new(404, "No Uuid"),
     IncorrectPassword => Status::new(401, "Unauthorized"),
     DatabaseError(e) => Status::new(503, "Service Unavailable"),
   }
@@ -200,8 +222,8 @@ fn main() {
     .mount("/projects", routes![read_project])
     .mount("/voter", routes![voter])
     .mount("/support", routes![support_user])
-    .mount("/user", routes![create, profile, profile_error])
-    .mount("/users", routes![read, read_count])
+    .mount("/user", routes![create, profile, profile_error, new_sub])
+    .mount("/users", routes![read, read_count, total_sub])
     .mount("/login", routes![login])
     .launch();
 }
